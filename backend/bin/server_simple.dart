@@ -6,6 +6,9 @@ void main() async {
   print('Server listening on port ${server.port}');
 
   await for (HttpRequest request in server) {
+    // Log all incoming requests for debugging
+    print('${DateTime.now()}: ${request.method} ${request.uri.path} - Headers: ${request.headers.toString()}');
+    
     // Add CORS headers
     request.response.headers.add('Access-Control-Allow-Origin', '*');
     request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -18,16 +21,19 @@ void main() async {
       continue;
     }
 
-    if (request.uri.path == '/api/health' && request.method == 'GET') {
-      // Health check endpoint for the backend itself
+    if ((request.uri.path == '/api/health' || request.uri.path == '/health') && request.method == 'GET') {
+      // Health check endpoint for the backend itself (handle both /api/health and /health)
+      print('Health endpoint hit successfully! Path: ${request.uri.path}');
       request.response.headers.contentType = ContentType.json;
       request.response.write(jsonEncode({
         'status': 'healthy',
         'timestamp': DateTime.now().toIso8601String(),
-        'service': 'microservice-dashboard-backend'
+        'service': 'microservice-dashboard-backend',
+        'path': request.uri.path
       }));
-    } else if (request.uri.path == '/api/services' && request.method == 'GET') {
-      // Return hardcoded services list
+    } else if ((request.uri.path == '/api/services' || request.uri.path == '/services') && request.method == 'GET') {
+      // Return hardcoded services list (handle both /api/services and /services)
+      print('Services endpoint hit! Path: ${request.uri.path}');
       final services = [
         {
           'name': 'Dashboard Backend',
@@ -58,9 +64,10 @@ void main() async {
       request.response.headers.contentType = ContentType.json;
       request.response.write(jsonEncode(services));
     } else {
-      // Return 404 for other paths
+      // Return 404 for other paths with debugging info
+      print('404 - Path not found: ${request.uri.path}');
       request.response.statusCode = 404;
-      request.response.write('Not Found');
+      request.response.write('Not Found - Requested path: ${request.uri.path}');
     }
 
     await request.response.close();

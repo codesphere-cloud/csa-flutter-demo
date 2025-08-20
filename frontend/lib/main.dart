@@ -279,32 +279,50 @@ class _StatusDashboardState extends State<StatusDashboard> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(service.url),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(service.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _getStatusColor(service.status),
-                          width: 1,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(service.status).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _getStatusColor(service.status),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            _getStatusText(service.status),
+                            style: TextStyle(
+                              color: _getStatusColor(service.status),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        _getStatusText(service.status),
-                        style: TextStyle(
-                          color: _getStatusColor(service.status),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: service.status == Status.loading 
+                              ? null 
+                              : () => _checkServiceHealth(index),
+                          icon: service.status == Status.loading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.refresh),
+                          tooltip: service.status == Status.loading 
+                              ? 'Checking...' 
+                              : 'Check Status',
+                          iconSize: 20,
                         ),
-                      ),
+                      ],
                     ),
-                    onTap: () {
-                      // Re-check this specific service
-                      _checkServiceHealth(index);
-                    },
                   ),
                 );
               },
