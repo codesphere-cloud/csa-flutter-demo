@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 void main() async {
-  final server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
+  final server = await HttpServer.bind(InternetAddress.anyIPv4, 3000);
   print('Server listening on port ${server.port}');
 
   await for (HttpRequest request in server) {
