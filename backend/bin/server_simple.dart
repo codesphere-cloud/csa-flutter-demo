@@ -18,9 +18,21 @@ void main() async {
       continue;
     }
 
-    if (request.uri.path == '/api/services' && request.method == 'GET') {
+    if (request.uri.path == '/api/health' && request.method == 'GET') {
+      // Health check endpoint for the backend itself
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(jsonEncode({
+        'status': 'healthy',
+        'timestamp': DateTime.now().toIso8601String(),
+        'service': 'microservice-dashboard-backend'
+      }));
+    } else if (request.uri.path == '/api/services' && request.method == 'GET') {
       // Return hardcoded services list
       final services = [
+        {
+          'name': 'Dashboard Backend',
+          'url': '/api/health',
+        },
         {
           'name': 'Google DNS',
           'url': 'https://8.8.8.8',
@@ -30,7 +42,7 @@ void main() async {
           'url': 'https://api.publicapis.org/entries',
         },
         {
-          'name': 'GitHub',
+          'name': 'GitHub API',
           'url': 'https://api.github.com',
         },
         {
