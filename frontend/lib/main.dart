@@ -70,7 +70,7 @@ class _StatusDashboardState extends State<StatusDashboard> {
     try {
       // Fetch services from backend
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/services'),
+        Uri.parse('/api/services'),
         headers: {'Content-Type': 'application/json'},
       );
 
