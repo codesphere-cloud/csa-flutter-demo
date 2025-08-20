@@ -21,16 +21,21 @@ void main() async {
       continue;
     }
 
-    if ((request.uri.path == '/api/health' || request.uri.path == '/health') && request.method == 'GET') {
-      // Health check endpoint for the backend itself (handle both /api/health and /health)
-      print('Health endpoint hit successfully! Path: ${request.uri.path}');
+    if ((request.uri.path == '/api/health' || request.uri.path == '/health') && 
+        (request.method == 'GET' || request.method == 'HEAD')) {
+      // Health check endpoint for the backend itself (handle both GET and HEAD methods)
+      print('Health endpoint hit successfully! Method: ${request.method}, Path: ${request.uri.path}');
       request.response.headers.contentType = ContentType.json;
-      request.response.write(jsonEncode({
-        'status': 'healthy',
-        'timestamp': DateTime.now().toIso8601String(),
-        'service': 'microservice-dashboard-backend',
-        'path': request.uri.path
-      }));
+      
+      // For HEAD requests, we only set headers but don't write body content
+      if (request.method == 'GET') {
+        request.response.write(jsonEncode({
+          'status': 'healthy',
+          'timestamp': DateTime.now().toIso8601String(),
+          'service': 'microservice-dashboard-backend',
+          'path': request.uri.path
+        }));
+      }
     } else if ((request.uri.path == '/api/services' || request.uri.path == '/services') && request.method == 'GET') {
       // Return hardcoded services list (handle both /api/services and /services)
       print('Services endpoint hit! Path: ${request.uri.path}');
