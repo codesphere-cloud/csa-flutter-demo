@@ -13,7 +13,7 @@ prepare:
     - name: Check Dart Version
       command: dart --version
     - name: Test Backend Compilation
-      command: cd /home/user/app/backend/ && dart analyze bin/server_simple.dart
+      command: cd /home/user/app/backend/ && dart analyze bin/server.dart
 test:
   steps: []
 run:
@@ -30,7 +30,7 @@ run:
   backend-1:
     steps:
       - name: Run Backend
-        command: cd /home/user/app/backend/ && dart run bin/server_simple.dart
+        command: cd /home/user/app/backend/ && dart run bin/server.dart
     plan: 8
     replicas: 1
     isPublic: true
