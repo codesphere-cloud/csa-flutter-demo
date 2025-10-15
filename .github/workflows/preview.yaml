@@ -13,7 +13,7 @@ jobs:
       CS_TOKEN: ${{ secrets.CS_TOKEN }}
       CS_TEAM_ID: ${{ vars.CS_TEAM_ID }}
       CS_API: ${{ vars.CS_API }}
-      WORKSPACE_NAME: "${{ github.event.pull_request.head.repo.name }}-preview-#${{ github.event.pull_request.number }}"
+      WORKSPACE_NAME: "${{ github.event.pull_request.head.repo.name }}-preview-#${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}"
       REPO_URL: ${{ github.event.pull_request.head.repo.clone_url }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       IS_PRIVATE_REPO: true
