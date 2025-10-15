@@ -1,7 +1,6 @@
 name: Create Codesphere Workspace on PR
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow from the Actions tab
   pull_request:
     types: [opened, reopened, synchronize] # Triggers when a PR is opened, reopened, or new commits are pushed to it
 
