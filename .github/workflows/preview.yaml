@@ -1,0 +1,139 @@
+name: Create Codesphere Workspace on PR
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize] # Triggers when a PR is opened, reopened, or new commits are pushed to it
+
+jobs:
+  create-workspace:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CS_TOKEN: ${{ secrets.CS_TOKEN }}
+      CS_TEAM_ID: ${{ vars.CS_TEAM_ID }}
+      CS_API: ${{ vars.CS_API }}
+      WORKSPACE_NAME: "${{ github.event.pull_request.head.repo.name }}-preview-#${{ github.event.pull_request.number }}"
+      REPO_URL: ${{ github.event.pull_request.head.repo.clone_url }}
+      BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+      IS_PRIVATE_REPO: true
+      CODESPHERE_PLAN_ID: ${{ vars.CODESPHERE_DEFAULT_PLAN_ID || '8' }}
+      WORKSPACE_TIMEOUT: '5m'
+
+    steps:
+      - name: Checkout repository (optional, for context)
+        uses: actions/checkout@v4
+
+      - name: Install Codesphere CLI
+        run: |
+          echo "Downloading Codesphere CLI"
+          gh release download -R codesphere-cloud/cs-go -O /usr/local/bin/cs -p "*linux_amd64"
+          chmod +x /usr/local/bin/cs
+          cs version
+
+      - name: Check and Get Existing Workspace ID
+        id: check_get_workspace # Give this step an ID to reference its outputs
+        run: |
+          WORKSPACE_NAME_TO_FIND="${{ env.WORKSPACE_NAME }}"
+          echo "Checking for existing workspace with name: '$WORKSPACE_NAME_TO_FIND'"
+
+          EXISTING_WORKSPACES_OUTPUT=$(cs list workspaces)
+          echo "--- cs list workspaces output ---"
+          echo "$EXISTING_WORKSPACES_OUTPUT"
+          echo "---------------------------------"
+
+          # Search for the line containing the exact workspace name.
+          # Use head -n 1 in case multiple lines might contain the substring (unlikely for exact name, but safe).
+          MATCHING_LINE=$(echo "$EXISTING_WORKSPACES_OUTPUT" | grep -F "${WORKSPACE_NAME_TO_FIND}" | head -n 1)
+
+          FOUND_ID=""
+          if [ -n "$MATCHING_LINE" ]; then
+            # Extract ID (which is the third pipe-separated field from the table body) and trim whitespace.
+            # Example line: "|   30809 | 64976 | codesphere-community/FlowiseAI   |"
+            # Field 1: TEAM ID, Field 2: ID, Field 3: NAME
+            FOUND_ID=$(echo "$MATCHING_LINE" | awk -F'|' '{print $3}' | xargs) # xargs trims leading/trailing whitespace
+
+            echo "Found existing workspace '$WORKSPACE_NAME_TO_FIND' with ID: '$FOUND_ID'"
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "workspace_id=$FOUND_ID" >> $GITHUB_OUTPUT
+          else
+            echo "Workspace '$WORKSPACE_NAME_TO_FIND' does not exist."
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "workspace_id=" >> $GITHUB_OUTPUT # Explicitly empty if not found
+          fi
+
+      - name: Maybe Create Codesphere Workspace
+        id: create_workspace_step
+        if: ${{ steps.check_get_workspace.outputs.exists == 'false' }}
+        run: |
+          WORKSPACE_OUTPUT=$(
+            cs create workspace "${{ env.WORKSPACE_NAME }}" \
+              -r "${{ env.REPO_URL }}" \
+              -b "${{ env.BRANCH_NAME }}" \
+              -P \
+              -p ${{ env.CODESPHERE_PLAN_ID }} \
+              --timeout ${{ env.WORKSPACE_TIMEOUT }}
+          )
+
+          echo "$WORKSPACE_OUTPUT"
+          WORKSPACE_ID=$(echo "$WORKSPACE_OUTPUT" | grep -oP '^ID: \K\d+' | tr -d '\n\r ')
+          echo "Parsed Workspace ID for check: '$WORKSPACE_ID'"
+
+          if [ -z "$WORKSPACE_ID" ]; then
+            echo "Error: Could not parse a valid Workspace ID from command output. Output was:"
+            echo "$WORKSPACE_OUTPUT"
+            exit 1
+          fi
+
+          echo "workspace_id=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+
+      - name: Determine Workspace ID
+        id: get_final_workspace_id
+        run: |
+          WORKSPACE_ID_FOR_USE="${{ steps.check_get_workspace.outputs.workspace_id }}"
+          if [ -z "$WORKSPACE_ID_FOR_USE" ]; then
+            WORKSPACE_ID_FOR_USE="${{ steps.create_workspace_step.outputs.workspace_id }}"
+          fi
+          if [ -z "$WORKSPACE_ID_FOR_USE" ]; then
+            echo "Error: Final Workspace ID could not be determined for subsequent operations."
+            exit 1
+          fi
+          echo "workspace_id=$WORKSPACE_ID_FOR_USE" >> $GITHUB_OUTPUT
+
+      - name: Update Workspace to Upstream Revision
+        run: |
+          WORKSPACE_ID_FOR_GIT="${{ steps.get_final_workspace_id.outputs.workspace_id }}"
+          TARGET_BRANCH="${{ env.BRANCH_NAME }}"
+
+          if [ -z "$WORKSPACE_ID_FOR_GIT" ]; then
+            echo "Error: Cannot determine Workspace ID to update."
+            exit 1
+          fi
+
+          if [ -z "$TARGET_BRANCH" ]; then
+            echo "Error: Branch name not available for git operations."
+            exit 1
+          fi
+
+          # Update branch of the Workspace
+          cs git --branch $TARGET_BRANCH -w "$WORKSPACE_ID_FOR_GIT"
+
+          echo "Updated branch of Workspace $WORKSPACE_ID_FOR_GIT to $TARGET_BRANCH"
+      
+
+      - name: Start Codesphere Pipeline
+        run: |
+          # Prioritize the ID from the 'check_get_workspace' step if it existed,
+          # otherwise use the ID from the 'create_workspace_step' if it was newly created.
+          WORKSPACE_ID_FOR_PIPELINE="${{ steps.get_final_workspace_id.outputs.workspace_id }}"
+
+          if [ -z "$WORKSPACE_ID_FOR_PIPELINE" ]; then
+            WORKSPACE_ID_FOR_PIPELINE="${{ steps.create_workspace_step.outputs.workspace_id }}"
+          fi
+
+          if [ -z "$WORKSPACE_ID_FOR_PIPELINE" ]; then
+            echo "Error: Cannot determine Workspace ID to start pipeline. Was it created/found?"
+            exit 1
+          fi
+
+          echo "Starting pipeline for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          cs start pipeline -p demo prepare run -w "$WORKSPACE_ID_FOR_PIPELINE"
