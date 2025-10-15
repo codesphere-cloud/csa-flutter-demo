@@ -1,6 +1,3 @@
-# Codesphere deployment configuration
-# This file demonstrates the CI/CD setup for the Microservice Status Dashboard
-
 schemaVersion: v0.2
 prepare:
   steps:
@@ -23,17 +20,25 @@ run:
         command: cd /home/user/app/frontend/build/web && python3 -m http.server 3000
     plan: 8
     replicas: 1
-    isPublic: true
     network:
-      path: /
-      stripPath: false
+      ports:
+        - port: 3000
+          isPublic: false
+      paths:
+        - port: 3000
+          path: /
+          stripPath: false
   backend-1:
     steps:
       - name: Run Backend
         command: cd /home/user/app/backend/ && dart run bin/server.dart
-    plan: 8
+    plan: 101
     replicas: 1
-    isPublic: true
     network:
-      path: /api
-      stripPath: false
+      ports:
+        - port: 3000
+          isPublic: false
+      paths:
+        - port: 3000
+          path: /api
+          stripPath: false
