@@ -17,7 +17,7 @@ jobs:
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       IS_PRIVATE_REPO: true
       CODESPHERE_PLAN_ID: ${{ vars.CODESPHERE_DEFAULT_PLAN_ID || '8' }}
-      WORKSPACE_TIMEOUT: '5m'
+      WORKSPACE_TIMEOUT: '20m'
 
     steps:
       - name: Checkout repository (optional, for context)
