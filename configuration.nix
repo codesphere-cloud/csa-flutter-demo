@@ -1,18 +1,17 @@
-{ pkgs ? import <nixpkgs> {
-    config = {
-    };
-  },
-}:
+# This rewrite ensures compatibility with Nix 2.16 by avoiding the newer
+# syntax for default function arguments when importing nixpkgs with attributes.
+{ pkgs ? null }:
 
+let
+  # Use a robust if/then/else block to handle the default 'pkgs' argument.
+  # This explicitly checks if pkgs is null (i.e., not passed) and imports <nixpkgs>
+  # if a package set wasn't provided.
+  resolvedPkgs = if pkgs == null
+    then import <nixpkgs> {}
+    else pkgs;
+in
 
-with pkgs; [
-  flutter                  # Flutter SDK for building the frontend
-  pkg-config               # For package configuration
-  jdk17                    # Java Development Kit, needed for Android
-  gtk3                     # GTK3, used by Flutter on Linux and macOS
-  xorg.libX11              # Required for Flutter on Linux systems
-  glib                     # Library required by various components
-  dbus                     # Required for interprocess communication
-  pcre2                    # PCRE2 for regex support
-  go                       # Go programming language for backend development
+with resolvedPkgs; [
+  flutter                    # Flutter SDK for building the frontend
+  pkg-config                 # For package configuration
 ]

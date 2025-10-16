@@ -1,6 +1,8 @@
 schemaVersion: v0.2
 prepare:
   steps:
+    - name: Update nix
+      command: curl -L https://nixos.org/nix/install | sh
     - name: Prepare Flutter Environment
       command: nix-env -i -f ~/app/configuration.nix
     - name: Install Dependencies
