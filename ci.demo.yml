@@ -6,17 +6,17 @@ prepare:
     - name: Prepare Flutter Environment
       command: nix-env -i -f ~/app/configuration.nix
     - name: Install Dependencies
-      command: cd /home/user/app/demo_app/ && flutter clean && flutter pub get
+      command: cd demo_app && flutter clean && flutter pub get
 test:
   steps: []
 run:
   app:
     steps:
       - name: Install Dependencies
-        command: cd /home/user/app/demo_app/ && flutter clean && flutter pub get
+        command: cd demo_app && flutter clean && flutter pub get
       - name: Run App in Debug
-        command: cd /home/user/app/demo_app/ && flutter run -d web-server
-          --web-hostname=0.0.0.0 --web-port=3000
+        command: cd demo_app && flutter run -d web-server --web-hostname=0.0.0.0
+          --web-port=3000
     plan: 201
     replicas: 1
     network:

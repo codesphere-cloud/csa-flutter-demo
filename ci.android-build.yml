@@ -1,0 +1,10 @@
+schemaVersion: v0.2
+prepare:
+  steps:
+    - name: Open DevShell & Build APK
+      command: cd demo_app && nix develop --extra-experimental-features nix-command
+        --extra-experimental-features flakes --command flutter build apk
+        --release
+test:
+  steps: []
+run: {}
