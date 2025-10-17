@@ -20,7 +20,7 @@ jobs:
       REPO_URL: ${{ github.event.pull_request.head.repo.clone_url }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       IS_PRIVATE_REPO: true
-      CODESPHERE_PLAN_ID: ${{ vars.CODESPHERE_DEFAULT_PLAN_ID || '101' }}
+      CODESPHERE_PLAN_ID: ${{ vars.CODESPHERE_DEFAULT_PLAN_ID || '201' }}
       WORKSPACE_TIMEOUT: '20m'
 
     steps:
