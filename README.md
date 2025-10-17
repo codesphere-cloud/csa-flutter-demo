@@ -1,12 +1,14 @@
 # CSA Flutter Demo
 
+Simple showcase for Flutter on Codesphere using the default Flutter Application template. 
+
 ## Development Setup
 
 ### Prerequisites
 - Flutter SDK (>=3.0.0)
 - Dart SDK (>=3.0.0)
 
-### Running the Application
+### Running the Application locally
 
 1. **Start the Frontend (Development):**
    ```bash
@@ -16,20 +18,10 @@
    ```
    Frontend will be available at `http://localhost:8080`
 
-### Building for Production
+### Running in Codesphere
 
-1. **Build Frontend:**
-   ```bash
-   cd frontend
-   flutter build web
-   ```
-   Static files will be generated in `frontend/build/web/`
+#### Development
 
-2. **For Codesphere Deployment:**
-   - The `ci.yml` prepare step runs `flutter build web` in the frontend directory
-   - Both services run on port 3000 with path-based routing:
-     - Frontend static files: `/` 
-     - Backend API: `/api/*`
-
-## API Endpoints
-
+- The `ci.demo.yml` prepare step installs Flutter
+- The run step starts the Flutter development server (`flutter run -d web-server`)
+- Execute both prepare and run step and use `Open Deployment`
