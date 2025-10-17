@@ -75,6 +75,7 @@ jobs:
               -b "${{ env.BRANCH_NAME }}" \
               -P \
               -p ${{ env.CODESPHERE_PLAN_ID }} \
+              --base-image 'ubuntu-24.04' \
               --timeout ${{ env.WORKSPACE_TIMEOUT }}
           )
 
