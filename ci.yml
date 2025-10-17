@@ -1,37 +1,21 @@
 schemaVersion: v0.2
 prepare:
   steps:
+    - name: Update nix
+      command: curl -L https://nixos.org/nix/install | sh
     - name: Prepare Flutter Environment
       command: nix-env -i -f ~/app/configuration.nix
-    - name: Install Frontend Dependencies
-      command: cd /home/user/app/frontend/ && flutter pub get
-    - name: Build Flutter Web App
-      command: cd /home/user/app/frontend/ && flutter clean && flutter build web
-    - name: Check Dart Version
-      command: dart --version
-    - name: Test Backend Compilation
-      command: cd /home/user/app/backend/ && dart analyze bin/server.dart
+    - name: Install Dependencies
+      command: cd /home/user/app/demo_app/ && flutter clean && flutter pub get
+    - name: Build App
+      command: cd /home/user/app/demo_app/ && flutter build web
 test:
   steps: []
 run:
-  frontend-1:
+  app:
     steps:
-      - name: Run Webserver
-        command: cd /home/user/app/frontend/build/web && python3 -m http.server 3000
-    plan: 8
-    replicas: 1
-    network:
-      ports:
-        - port: 3000
-          isPublic: false
-      paths:
-        - port: 3000
-          path: /
-          stripPath: false
-  backend-1:
-    steps:
-      - name: Run Backend
-        command: cd /home/user/app/backend/ && dart run bin/server.dart
+      - name: Start webserver
+        command: cd /home/user/app/demo_app/ && python3 -m http.server 3000
     plan: 101
     replicas: 1
     network:
@@ -40,5 +24,5 @@ run:
           isPublic: false
       paths:
         - port: 3000
-          path: /api
+          path: /
           stripPath: false
