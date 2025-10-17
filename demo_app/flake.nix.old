@@ -1,0 +1,66 @@
+{
+  description = "Flutter development environment with Android SDK on Nix.";
+  
+  inputs = { 
+    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; 
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system: let
+      
+      pkgs = import nixpkgs { 
+        inherit system; 
+        config.allowUnfree = true;
+        config.android_sdk.accept_license = true; 
+      };
+
+      # Define the composed Android SDK derivation
+      androidEnvComposition = pkgs.androidenv.composeAndroidPackages {
+        cmdLineToolsVersion = "latest";
+        platformToolsVersion = "latest";
+        buildToolsVersions = [ "34.0.0" ]; 
+        platformVersions = [ "34" ];
+        includeSystemImages = true;      
+        systemImageTypes = [ "google_apis" ];
+        includeEmulator = true;          
+      };
+
+      # The actual SDK path derivation is the 'androidsdk' attribute
+      androidSdkPath = androidEnvComposition.androidsdk;
+
+    in {
+      devShell = pkgs.mkShell {
+        
+        # --- Environment Variables ---
+        # ANDROID_HOME points to the root of the assembled SDK
+        ANDROID_HOME = "${androidSdkPath}";
+        ANDROID_SDK_ROOT = "${androidSdkPath}";
+        JAVA_HOME = "${pkgs.jdk17}"; 
+        FLUTTER_ROOT = "${pkgs.flutter}";
+        
+        # --- CORRECTED PATH DEFINITION ---
+        # Add the 'bin' directory which holds ALL the necessary tools (adb, sdkmanager, etc.)
+        PATH = [ 
+          "${androidSdkPath}/bin"
+          "${androidEnvComposition.emulator}" # Keep the emulator path separate for the executable
+        ];
+
+        # --- Build Inputs ---
+        buildInputs = with pkgs; [
+          flutter
+          jdk17
+          androidSdkPath # The main SDK derivation
+          androidEnvComposition.emulator # The emulator component
+        ];
+        
+        shellHook = ''
+          echo "Flutter and Android SDK environment is active."
+          # Explicitly set SDK paths again just before flutter doctor as a safeguard
+          export ANDROID_HOME="${androidSdkPath}"
+          export ANDROID_SDK_ROOT="${androidSdkPath}"
+          flutter doctor
+        '';
+      };
+    });
+}
