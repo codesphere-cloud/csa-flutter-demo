@@ -135,8 +135,11 @@ jobs:
             exit 1
           fi
 
-          echo "Starting pipeline for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          echo "Starting prepare step for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
           cs start pipeline -p demo prepare -w "$WORKSPACE_ID_FOR_PIPELINE"
 
           echo "Syncing landscape for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
           cs sync landscape -p demo -w "$WORKSPACE_ID_FOR_PIPELINE"
+
+          echo "Starting run step for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          cs start pipeline -p demo run -w "$WORKSPACE_ID_FOR_PIPELINE"
