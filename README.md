@@ -24,7 +24,7 @@ cd demo_app
 flutter clean && flutter pub get
 flutter build web
 ```
-The built app can be found and served from `demo_app/build/web`
+The built app can be found and served from `demo_app/build/web`, e.g. with simple webserver. 
 
 ### Building the Android APK
 
