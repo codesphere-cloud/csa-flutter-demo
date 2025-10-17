@@ -7,11 +7,15 @@ on:
 jobs:
   create-workspace:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     env:
       GH_TOKEN: ${{ github.token }}
       CS_TOKEN: ${{ secrets.CS_TOKEN }}
       CS_TEAM_ID: ${{ vars.CS_TEAM_ID }}
       CS_API: ${{ vars.CS_API }}
+      CS_DEVDOMAIN_BASE_URL: ${{ vars.CS_DEVDOMAIN_BASE_URL }}
       WORKSPACE_NAME: "${{ github.event.pull_request.head.repo.name }}-preview-#${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}"
       REPO_URL: ${{ github.event.pull_request.head.repo.clone_url }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
@@ -99,6 +103,14 @@ jobs:
           fi
           echo "workspace_id=$WORKSPACE_ID_FOR_USE" >> $GITHUB_OUTPUT
 
+      - name: Create Preview Deployment
+        id: create_deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: '${{ github.token }}'
+          environment: Preview
+          environment-url: "https://${{ steps.get_final_workspace_id.outputs.workspace_id }}-3000.${{ env.CS_DEVDOMAIN_BASE_URL }}"
+
       - name: Update Workspace to Upstream Revision
         run: |
           WORKSPACE_ID_FOR_GIT="${{ steps.get_final_workspace_id.outputs.workspace_id }}"
@@ -135,5 +147,29 @@ jobs:
             exit 1
           fi
 
-          echo "Starting pipeline for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
-          cs start pipeline -p demo prepare run -w "$WORKSPACE_ID_FOR_PIPELINE"
+          echo "Starting prepare step for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          cs start pipeline -p demo prepare -w "$WORKSPACE_ID_FOR_PIPELINE"
+
+          echo "Syncing landscape for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          cs sync landscape -p demo -w "$WORKSPACE_ID_FOR_PIPELINE"
+
+          echo "Starting run step for workspace ID: $WORKSPACE_ID_FOR_PIPELINE"
+          cs start pipeline -p demo run -w "$WORKSPACE_ID_FOR_PIPELINE"
+
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ steps.create_deployment.outputs.environment_url }}
+          deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
+          state: 'success'
+
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ steps.create_deployment.outputs.environment_url }}
+          deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
+          state: 'failure'
